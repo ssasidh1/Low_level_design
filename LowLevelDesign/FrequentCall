@@ -1,0 +1,43 @@
+import java.util.LinkedList;
+import java.util.Queue;
+
+public class CallTracker {
+    private Queue<Long> calls;  // Queue to store timestamps of function calls
+    
+    public CallTracker() {
+        this.calls = new LinkedList<>();
+    }
+
+    // Returns the current time in seconds since the Unix epoch
+    public long nowTime() {
+        return System.currentTimeMillis() / 1000;  // Convert milliseconds to seconds
+    }
+
+    // Checks if the function has been called more than 10 times in the last 5 minutes
+    public boolean isTooFrequent() {
+        long currentTime = nowTime();
+        
+        // Remove calls older than 5 minutes (300 seconds)
+        while (!calls.isEmpty() && calls.peek() <= currentTime - 300) {
+            calls.poll();  // Remove the first element (old timestamp)
+        }
+
+        // Add the current call timestamp
+        calls.add(currentTime);
+
+        // If there are more than 10 calls in the last 5 minutes, return true
+        return calls.size() > 10;
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        CallTracker tracker = new CallTracker();
+
+        // Simulate multiple calls to isTooFrequent()
+        System.out.println(tracker.isTooFrequent()); // Should be false
+        for (int i = 0; i < 11; i++) {
+            System.out.println(tracker.isTooFrequent()); // Should be false until 11th call
+            Thread.sleep(100); // Wait for 100 milliseconds between calls
+        }
+        System.out.println(tracker.isTooFrequent()); // Should be true after 11 calls within 5 minutes
+    }
+}

@@ -1,0 +1,234 @@
+import java.time.LocalDateTime;
+
+public class Comment {
+    private String commentId;
+    private String userId;
+    private String productId;
+    private String content;
+    private LocalDateTime timestamp;
+    private boolean isFlagged;
+
+    public Comment(String commentId, String userId, String productId, String content) {
+        this.commentId = commentId;
+        this.userId = userId;
+        this.productId = productId;
+        this.content = content;
+        this.timestamp = LocalDateTime.now();
+        this.isFlagged = false;
+    }
+
+    public String getCommentId() {
+        return commentId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public boolean isFlagged() {
+        return isFlagged;
+    }
+
+    public void flag() {
+        this.isFlagged = true;
+    }
+
+    public void unflag() {
+        this.isFlagged = false;
+    }
+}
+
+import java.util.List;
+
+public class FilterService {
+    private List<ContentFilter> filters;  // List of different content filters (Profanity, Spam, etc.)
+
+    public FilterService(List<ContentFilter> filters) {
+        this.filters = filters;
+    }
+
+    public boolean isCommentValid(Comment comment) {
+        for (ContentFilter filter : filters) {
+            if (!filter.apply(comment.getContent())) {
+                return false;  // If any filter fails, return false
+            }
+        }
+        return true;
+    }
+}
+
+public interface ContentFilter {
+    boolean apply(String content);  // Apply the filter to the content
+}
+
+import java.util.Arrays;
+import java.util.List;
+
+public class ProfanityFilter implements ContentFilter {
+    private List<String> bannedWords = Arrays.asList("badword1", "badword2");
+
+    @Override
+    public boolean apply(String content) {
+        for (String word : bannedWords) {
+            if (content.contains(word)) {
+                return false;  // If any banned word is found, return false
+            }
+        }
+        return true;
+    }
+}
+
+public class SpamFilter implements ContentFilter {
+    @Override
+    public boolean apply(String content) {
+        // Simple spam detection, e.g., checking for too many links, repetitive content, etc.
+        return !content.contains("http://");  // If contains URL, it's flagged as spam
+    }
+}
+
+import java.util.Arrays;
+import java.util.List;
+
+public class ProfanityFilter implements ContentFilter {
+    private List<String> bannedWords = Arrays.asList("badword1", "badword2");
+
+    @Override
+    public boolean apply(String content) {
+        for (String word : bannedWords) {
+            if (content.contains(word)) {
+                return false;  // If any banned word is found, return false
+            }
+        }
+        return true;
+    }
+}
+
+public class SpamFilter implements ContentFilter {
+    @Override
+    public boolean apply(String content) {
+        // Simple spam detection, e.g., checking for too many links, repetitive content, etc.
+        return !content.contains("http://");  // If contains URL, it's flagged as spam
+    }
+}
+
+
+import java.util.List;
+
+public class CommentService {
+    private FilterService filterService;
+    private List<Comment> comments;
+
+    public CommentService(FilterService filterService) {
+        this.filterService = filterService;
+        this.comments = new ArrayList<>();
+    }
+
+    public boolean submitComment(String userId, String productId, String content) {
+        Comment comment = new Comment(generateCommentId(), userId, productId, content);
+
+        // Check if comment is valid
+        if (filterService.isCommentValid(comment)) {
+            comments.add(comment);
+            return true;  // Comment successfully added
+        } else {
+            return false;  // Comment failed validation (e.g., profanity, spam)
+        }
+    }
+
+    private String generateCommentId() {
+        return UUID.randomUUID().toString();  // Generate a unique ID for the comment
+    }
+
+    public List<Comment> getCommentsByProduct(String productId) {
+        List<Comment> productComments = new ArrayList<>();
+        for (Comment comment : comments) {
+            if (comment.getProductId().equals(productId)) {
+                productComments.add(comment);
+            }
+        }
+        return productComments;
+    }
+
+    public List<Comment> getHistory(int limit) {
+        // Fetch the last 'limit' comments, based on timestamp or order
+        return comments.subList(Math.max(comments.size() - limit, 0), comments.size());
+    }
+}
+
+public class ModerationService {
+    public void moderateComment(Comment comment) {
+        // Logic for manual moderation
+        // For now, we can just flag the comment for review
+        comment.flag();
+    }
+}
+
+public class ReportService {
+    private List<Comment> reportedComments;
+
+    public ReportService() {
+        this.reportedComments = new ArrayList<>();
+    }
+
+    public void reportComment(Comment comment) {
+        comment.flag();  // Flag the comment as inappropriate
+        reportedComments.add(comment);  // Add the comment to the reported list
+    }
+
+    public List<Comment> getReportedComments() {
+        return reportedComments;  // Return the list of reported comments
+    }
+}
+
+
+public class Main {
+    public static void main(String[] args) {
+        // Create filters
+        List<ContentFilter> filters = Arrays.asList(new ProfanityFilter(), new SpamFilter());
+        FilterService filterService = new FilterService(filters);
+
+        // Create services
+        CommentService commentService = new CommentService(filterService);
+        ModerationService moderationService = new ModerationService();
+        ReportService reportService = new ReportService();
+
+        // Submit some comments
+        commentService.submitComment("user1", "product1", "This is a great product!");
+        commentService.submitComment("user2", "product1", "badword1 product");
+
+        // Get comments for product1
+        System.out.println("Comments for Product1:");
+        for (Comment comment : commentService.getCommentsByProduct("product1")) {
+            System.out.println(comment.getContent());
+        }
+
+        // Report a comment
+        Comment flaggedComment = commentService.getCommentsByProduct("product1").get(1);
+        reportService.reportComment(flaggedComment);
+
+        // Get reported comments
+        System.out.println("Reported Comments:");
+        for (Comment comment : reportService.getReportedComments()) {
+            System.out.println(comment.getContent());
+        }
+
+        // History
+        List<Comment> history = commentService.getHistory(10);
+        System.out.println("Last 10 Comments:");
+        for (Comment comment : history) {
+            System.out.println(comment.getContent());
+        }
+    }
+}

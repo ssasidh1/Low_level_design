@@ -1,0 +1,211 @@
+import java.time.LocalDateTime;
+import java.util.*;
+
+// MeetingRoom class - Represents a meeting room
+class MeetingRoom {
+    private String roomId;
+    private boolean isAvailable;  // Flag to track if the room is available
+
+    public MeetingRoom(String roomId) {
+        this.roomId = roomId;
+        this.isAvailable = true;
+    }
+
+    public String getRoomId() {
+        return roomId;
+    }
+
+    public boolean isAvailable() {
+        return isAvailable;
+    }
+
+    public void bookRoom() {
+        this.isAvailable = false;  // Mark the room as unavailable
+    }
+
+    public void freeRoom() {
+        this.isAvailable = true;  // Mark the room as available
+    }
+}
+
+// Booking class - Represents a booking of a meeting room
+class Booking {
+    private MeetingRoom meetingRoom;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private List<String> invitees;  // List of invited persons' emails or phone numbers
+
+    public Booking(MeetingRoom meetingRoom, LocalDateTime startTime, LocalDateTime endTime, List<String> invitees) {
+        this.meetingRoom = meetingRoom;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.invitees = invitees;
+    }
+
+    public boolean conflictsWith(Booking other) {
+        return (this.startTime.isBefore(other.endTime) && this.endTime.isAfter(other.startTime));
+    }
+
+    public void notifyInvitees(NotificationStrategy notificationStrategy) {
+        notificationStrategy.notifyUsers(invitees, this);
+    }
+}
+
+// Calendar class - Manages the meeting rooms and bookings
+class Calendar {
+    private Map<String, MeetingRoom> meetingRooms;  // Key: Room ID
+    private List<Booking> bookingHistory;  // Stores history of meetings
+
+    public Calendar() {
+        this.meetingRooms = new HashMap<>();
+        this.bookingHistory = new LinkedList<>();
+    }
+
+    public void addRoom(MeetingRoom room) {
+        meetingRooms.put(room.getRoomId(), room);
+    }
+
+    public Booking bookMeeting(MeetingRoom room, LocalDateTime startTime, LocalDateTime endTime, List<String> invitees) {
+        if (room.isAvailable() && isRoomAvailable(room, startTime, endTime)) {
+            Booking booking = new Booking(room, startTime, endTime, invitees);
+            room.bookRoom();
+            bookingHistory.add(0, booking);  // Add to the front of the history list
+            booking.notifyInvitees(new EmailNotificationStrategy());  // Send notification to invitees
+            return booking;
+        } else {
+            throw new RuntimeException("Room is not available at the requested time.");
+        }
+    }
+
+    public boolean isRoomAvailable(MeetingRoom room, LocalDateTime startTime, LocalDateTime endTime) {
+        for (Booking booking : bookingHistory) {
+            if (booking.conflictsWith(new Booking(room, startTime, endTime, new ArrayList<>()))) {
+                return false;  // Room is not available
+            }
+        }
+        return true;
+    }
+
+    public List<Booking> getHistory() {
+        return bookingHistory.subList(0, Math.min(bookingHistory.size(), 20));  // Return last 20 bookings
+    }
+}
+
+// NotificationStrategy interface - Defines the strategy for notifications
+interface NotificationStrategy {
+    void notifyUsers(List<String> invitees, Booking booking);
+}
+
+// EmailNotificationStrategy class - Sends email notifications
+public class EmailNotificationStrategy implements NotificationStrategy {
+    @Override
+    public void notifyUsers(List<String> invitees, Booking booking) {
+        // Send email notifications
+        for (String invitee : invitees) {
+            System.out.println("Sending email to " + invitee + " for meeting in room " + booking.meetingRoom.getRoomId());
+        }
+    }
+}
+
+// SMSNotificationStrategy class - Sends SMS notifications
+public class SMSNotificationStrategy implements NotificationStrategy {
+    @Override
+    public void notifyUsers(List<String> invitees, Booking booking) {
+        // Send SMS notifications
+        for (String invitee : invitees) {
+            System.out.println("Sending SMS to " + invitee + " for meeting in room " + booking.meetingRoom.getRoomId());
+        }
+    }
+}
+
+// MeetingSchedulerAPI interface - Defines the API for the client
+public interface MeetingSchedulerAPI {
+    MeetingRoom checkAvailability(LocalDateTime startTime, LocalDateTime endTime);
+    Booking bookMeeting(MeetingRoom room, LocalDateTime startTime, LocalDateTime endTime, List<String> invitees);
+    List<Booking> getMeetingHistory();
+}
+
+// MeetingSchedulerService class - Implements the MeetingSchedulerAPI
+public class MeetingSchedulerService implements MeetingSchedulerAPI {
+    private Calendar calendar;
+
+    public MeetingSchedulerService(Calendar calendar) {
+        this.calendar = calendar;
+    }
+
+    @Override
+    public MeetingRoom checkAvailability(LocalDateTime startTime, LocalDateTime endTime) {
+        for (MeetingRoom room : calendar.meetingRooms.values()) {
+            if (calendar.isRoomAvailable(room, startTime, endTime)) {
+                return room;  // Found available room
+            }
+        }
+        return null;  // No room available
+    }
+
+    @Override
+    public Booking bookMeeting(MeetingRoom room, LocalDateTime startTime, LocalDateTime endTime, List<String> invitees) {
+        return calendar.bookMeeting(room, startTime, endTime, invitees);
+    }
+
+    @Override
+    public List<Booking> getMeetingHistory() {
+        return calendar.getHistory();
+    }
+}
+
+// Singleton Meeting Room Manager
+public class MeetingRoomManager {
+    private static MeetingRoomManager instance;
+    private Calendar calendar;
+
+    private MeetingRoomManager() {
+        this.calendar = new Calendar();
+    }
+
+    public static synchronized MeetingRoomManager getInstance() {
+        if (instance == null) {
+            instance = new MeetingRoomManager();
+        }
+        return instance;
+    }
+
+    public Calendar getCalendar() {
+        return calendar;
+    }
+}
+
+// Main class to demonstrate the functionality
+public class Main {
+    public static void main(String[] args) {
+        // Create Meeting Rooms
+        MeetingRoom room1 = new MeetingRoom("Room1");
+        MeetingRoom room2 = new MeetingRoom("Room2");
+
+        // Get Singleton instance of MeetingRoomManager and add rooms
+        MeetingRoomManager roomManager = MeetingRoomManager.getInstance();
+        roomManager.getCalendar().addRoom(room1);
+        roomManager.getCalendar().addRoom(room2);
+
+        // Create MeetingSchedulerService and check availability
+        MeetingSchedulerService service = new MeetingSchedulerService(roomManager.getCalendar());
+
+        LocalDateTime startTime = LocalDateTime.of(2023, 5, 1, 10, 0);
+        LocalDateTime endTime = LocalDateTime.of(2023, 5, 1, 11, 0);
+
+        // Check for room availability
+        MeetingRoom availableRoom = service.checkAvailability(startTime, endTime);
+        if (availableRoom != null) {
+            System.out.println("Room available: " + availableRoom.getRoomId());
+
+            // Book the room and send notifications
+            List<String> invitees = Arrays.asList("person1@example.com", "person2@example.com");
+            Booking booking = service.bookMeeting(availableRoom, startTime, endTime, invitees);
+            System.out.println("Meeting booked in room: " + availableRoom.getRoomId());
+        }
+
+        // Get meeting history (last 20 meetings)
+        List<Booking> history = service.getMeetingHistory();
+        System.out.println("Meeting History: " + history.size() + " bookings found.");
+    }
+}

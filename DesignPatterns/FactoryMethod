@@ -1,0 +1,19 @@
+public interface Animal{
+	public String animalSound(String sound);
+}
+
+public class Cat implements Animal{
+	public String animalSound(String sound){
+	System.out.println(“I Meow”);
+}
+}
+public class Dog implements Animal{
+	public String animalSound(String sound){
+	System.out.println(“I Bark”);
+}
+}
+
+psvm(){
+	Animal catMe = new Cat();
+	catMe.animalSound(“Meow”);
+}

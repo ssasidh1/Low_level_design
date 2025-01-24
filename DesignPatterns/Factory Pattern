@@ -1,0 +1,103 @@
+public interface Coin {
+    String getDescription();
+}
+
+// different coins
+public class CopperCoin implements Coin {
+    public String getDescription() {
+        return "I am a copper coin.";
+    }
+}
+
+public class GoldCoin implements Coin {
+    public String getDescription() {
+        return "I am a gold coin.";
+    }
+}
+
+
+// Factory type of objects to call based on type
+public class CoinFactory {
+    public static Coin getCoin(String type) {
+        switch (type.toUpperCase()) {
+            case "COPPER":
+                return new CopperCoin();
+            case "GOLD":
+                return new GoldCoin();
+            default:
+                throw new IllegalArgumentException("Unknown coin type");
+        }
+    }
+}
+
+// traditional way but as number of coins increases it’ll be difficult
+public class Main {
+    public static void main(String[] args) {
+        Coin coin1 = CoinFactory.getCoin("COPPER");
+        Coin coin2 = CoinFactory.getCoin("GOLD");
+        System.out.println(coin1.getDescription());
+        System.out.println(coin2.getDescription());
+    }
+}
+
+
+@RequiredArgsConstructor
+@Getter
+public enum CoinType {
+    COPPER(CopperCoin::new), // :: is method calling and new is the constructor method
+    GOLD(GoldCoin::new);
+
+    private final Supplier<Coin> constructor; // helps in creating corresponding coin
+}
+
+
+
+
+
+
+public class Main {
+    public static void main(String[] args) {
+        Coin coin1 = CoinFactory.getCoin(CoinType.COPPER);
+        Coin coin2 = CoinFactory.getCoin(CoinType.GOLD);
+        System.out.println(coin1.getDescription());
+        System.out.println(coin2.getDescription());
+    }
+}
+
+// In this case, the getCoin method creates the constructor. 
+
+// But we can use supplier to do that as well
+
+public enum CoinType {
+    COPPER(CopperCoin::new),
+    GOLD(GoldCoin::new);
+    
+    private final Supplier<Coin> constructor;
+
+    CoinType(Supplier<Coin> constructor) {
+        this.constructor = constructor;
+    }
+
+    public Supplier<Coin> getConstructor() {
+        return constructor;
+    }
+}
+//or
+public enum CoinType {
+    COPPER {
+        @Override
+        public Coin createCoin() {
+            return new CopperCoin();
+        }
+    },
+    GOLD {
+        @Override
+        public Coin createCoin() {
+            return new GoldCoin();
+        }
+    };
+
+    public abstract Coin createCoin();
+}
+
+

@@ -1,0 +1,185 @@
+public interface Castle {
+    String getDescription();
+}
+
+public interface King {
+    String getDescription();
+}
+
+public interface Army {
+    String getDescription();
+}
+
+
+public class ElfCastle implements Castle {
+    static final String DESCRIPTION = "This is the elven castle!";
+
+    @Override
+    public String getDescription() {
+        return DESCRIPTION;
+    }
+}
+
+public class ElfKing implements King {
+    static final String DESCRIPTION = "This is the elven king!";
+
+    @Override
+    public String getDescription() {
+        return DESCRIPTION;
+    }
+}
+
+public class ElfArmy implements Army {
+    static final String DESCRIPTION = "This is the elven army!";
+
+    @Override
+    public String getDescription() {
+        return DESCRIPTION;
+    }
+}
+
+
+public class OrcCastle implements Castle {
+    static final String DESCRIPTION = "This is the orcish castle!";
+
+    @Override
+    public String getDescription() {
+        return DESCRIPTION;
+    }
+}
+
+public class OrcKing implements King {
+    static final String DESCRIPTION = "This is the orcish king!";
+
+    @Override
+    public String getDescription() {
+        return DESCRIPTION;
+    }
+}
+
+public class OrcArmy implements Army {
+    static final String DESCRIPTION = "This is the orcish army!";
+
+    @Override
+    public String getDescription() {
+        return DESCRIPTION;
+    }
+}
+
+
+public interface KingdomFactory {
+    Castle createCastle();
+
+    King createKing();
+
+    Army createArmy();
+}
+
+
+public class ElfKingdomFactory implements KingdomFactory {
+
+    @Override
+    public Castle createCastle() {
+        return new ElfCastle();
+    }
+
+    @Override
+    public King createKing() {
+        return new ElfKing();
+    }
+
+    @Override
+    public Army createArmy() {
+        return new ElfArmy();
+    }
+}
+
+public class OrcKingdomFactory implements KingdomFactory {
+
+    @Override
+    public Castle createCastle() {
+        return new OrcCastle();
+    }
+
+    @Override
+    public King createKing() {
+        return new OrcKing();
+    }
+
+    @Override
+    public Army createArmy() {
+        return new OrcArmy();
+    }
+}
+
+
+public class FactoryMaker {
+
+    public enum KingdomType {
+        ELF, ORC
+    }
+
+    public static KingdomFactory makeFactory(KingdomType type) {
+        return switch (type) {
+            case ELF -> new ElfKingdomFactory();
+            case ORC -> new OrcKingdomFactory();
+        };
+    }
+}
+
+
+public class Kingdom {
+    private Castle castle;
+    private King king;
+    private Army army;
+
+    public void setCastle(Castle castle) {
+        this.castle = castle;
+    }
+
+    public Castle getCastle() {
+        return castle;
+    }
+
+    public void setKing(King king) {
+        this.king = king;
+    }
+
+    public King getKing() {
+        return king;
+    }
+
+    public void setArmy(Army army) {
+        this.army = army;
+    }
+
+    public Army getArmy() {
+        return army;
+    }
+
+    public void createKingdom(FactoryMaker.KingdomType type) {
+        KingdomFactory factory = FactoryMaker.makeFactory(type);
+        this.setCastle(factory.createCastle());
+        this.setKing(factory.createKing());
+        this.setArmy(factory.createArmy());
+    }
+}
+
+
+public class Main {
+    public static void main(String[] args) {
+        Kingdom kingdom = new Kingdom();
+
+        System.out.println("Creating Elf Kingdom...");
+        kingdom.createKingdom(FactoryMaker.KingdomType.ELF);
+        System.out.println(kingdom.getCastle().getDescription());
+        System.out.println(kingdom.getKing().getDescription());
+        System.out.println(kingdom.getArmy().getDescription());
+
+        System.out.println("\nCreating Orc Kingdom...");
+        kingdom.createKingdom(FactoryMaker.KingdomType.ORC);
+        System.out.println(kingdom.getCastle().getDescription());
+        System.out.println(kingdom.getKing().getDescription());
+        System.out.println(kingdom.getArmy().getDescription());
+    }
+}

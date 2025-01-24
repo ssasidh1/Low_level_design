@@ -1,0 +1,34 @@
+public interface Strategies{
+	Void execute();
+}
+
+public class Strategy1 implements Strategies{
+	@Override
+	Public void execute(){
+		// strategy1
+}
+}
+
+
+public class Strategy2 implements Strategies{
+	@Override
+	Public void execute(){
+		// strategy2
+}
+}
+
+public class StartegyPicker{
+	Private Strategy strategy
+	public StartegyPicker(Strategies strategy){
+		This.strategy = strategy;
+}
+
+public  void changeStrategy(Strategy strategy){
+	This.strategy = strategy;
+}
+
+public void executeStrategy(){
+	// execute strategy
+}
+}
+
