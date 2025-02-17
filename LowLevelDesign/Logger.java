@@ -162,6 +162,19 @@ class Logger {
         return instance;
     }
 
+    // or
+    /**
+    * public static Logger getLogger(){
+    *     if(logger == null){
+    *        synchronized(Logger.class)
+    *        {
+    *            if(logger == null) logger = new Logger();
+    *        }
+    *        return logger;
+    *     }
+    *}
+    */
+
     /**
      * Adds an appender to the logger.
      *
