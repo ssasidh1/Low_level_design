@@ -50,6 +50,12 @@ public enum CoinType {
     private final Supplier<Coin> constructor; // helps in creating corresponding coin
 }
 
+Map<String, Supplier<Product>> productMap = new HashMap<>();
+productMap.put("A", ProductA::new);
+productMap.put("B", ProductB::new);
+
+// To create a product:
+Product product = productMap.get("A").get();
 
 
 
